@@ -1,0 +1,112 @@
+---
+title: "Financiamiento en la Provincia de Misiones"
+author: "Ministerio del Agro y la Producción"
+date: "24/8/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, include = FALSE)
+```
+
+```{r, warning=FALSE, message=FALSE, error=FALSE}
+# Cargo las bibliotecas que voy a usar
+library(tidyverse)
+library(readr)
+library("readxl")
+library(openxlsx)
+library(sf)
+library(tmap)
+library(GISTools)
+library(raster)
+library(sp)
+library(GISTools)
+library(ggplot2)
+library(scales)
+library(classInt)
+library(grid)
+library(psych)
+library(ggthemes)
+library(spdep)# Para inferencia espacial
+library(ggtext) # Para usar la funcion 
+library(ggrepel)
+library(gridExtra)
+library(kableExtra)
+library(ggnewscale)
+library(scales)
+library(reticulate)
+
+```
+
+```{r}
+# Instalo los módulos
+# use_virtualenv("r-reticulate") tambien puedo usar esto
+# create a new environment 
+conda_create("r-reticulate")  
+
+py_install("pandas")
+py_install("tabula")
+
+# install tabula
+conda_install("r-reticulate", "tabula-py")
+
+```
+
+```{python}
+
+import pandas as pd
+from tabula import read_pdf
+
+```
+
+```{python}
+  
+def bcra(codigo):
+    box = [4,3,19,27]
+    fc = 28.28
+    for i in range(0, len(box)):
+      box[i] *= fc
+
+    path = "http://www.bcra.gob.ar/Pdfs/PublicacionesEstadisticas/BoletinEstadistico/" + 'boldat' + str(codigo) +".pdf"
+    tables = read_pdf(path, pages='314,316,318', area=[box], stream=True)
+    
+    misiones = pd.DataFrame()
+    
+    for tabla in tables:
+      misiones = pd.concat(tables)
+    misiones = misiones.rename(columns={'Unnamed: 0':'Actividad','Unnamed: 5':f'Misiones{str(codigo)}'})
+    misiones = misiones[['Actividad',f'Misiones{str(codigo)}']]
+    misiones['ID'] = range(len(misiones))
+    misiones = misiones.set_index('ID')
+
+    if codigo != 202001:
+      misiones = misiones.drop(columns='Actividad')
+
+    return misiones
+
+def tabla(codes:list):
+    primero = pd.concat([pd.DataFrame(bcra(202001))])
+    definitivo = pd.concat([pd.DataFrame(bcra(i)) for i in codes], axis=1)
+    definitivo2 = primero.merge(definitivo, how='left', on='ID') 
+    return definitivo2
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
